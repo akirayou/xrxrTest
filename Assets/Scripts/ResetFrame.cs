@@ -25,24 +25,64 @@ namespace RosSharp.RosBridgeClient
         }
         //called by some event
         //Set the AR camera on real robot and do ResetFrame(), "Unity"TF will fixed  with the offset of transform as PoseStamped message (in ROS side script)
-        public void RsetFrame()
+        public void ResetFrameBoth(Transform RefTransform = null)
         {
 			GameObject go = new GameObject();
-			go.transform.parent = ReferenceTransform;
-			go.transform.localPosition = -1*ResetOffset;
-			go.transform.rotation =ReferenceTransform.rotation;
+            if (RefTransform is null)
+            {
+                go.transform.parent = ReferenceTransform;
+            }
+            else
+            {
+                go.transform.parent = RefTransform;
+            }
 
-			Matrix4x4 v=  TargetTransform.localToWorldMatrix  * go.transform.worldToLocalMatrix;
-            Vector3 p = v.GetColumn(3);  
+
+            if (BasePlane.IsValid())
+            {
+                Vector3 normal = BasePlane.rotation * Vector3.down;
+                float b = Vector3.Dot(normal, BasePlane.position);
+                float a = Vector3.Dot(normal, ReferenceTransform.position);
+                go.transform.position = ReferenceTransform.position - (a - b) * normal;
+
+                //normal direction must be same as base plane.
+                normal = BasePlane.rotation * Vector3.up;
+                Vector3 rotVec = new Vector3(
+                    ReferenceTransform.transform.rotation.x,
+                    ReferenceTransform.transform.rotation.y,
+                    ReferenceTransform.transform.rotation.z);
+                float r = Vector3.Dot(normal, rotVec);
+                go.transform.rotation = Quaternion.AxisAngle(normal, r);
+            }
+            else
+            {
+                go.transform.localPosition = -1 * ResetOffset;
+                go.transform.rotation = ReferenceTransform.rotation;
+
+            }
+
+            Matrix4x4 v =  TargetTransform.localToWorldMatrix  * go.transform.worldToLocalMatrix;
+            Vector3 p = v.GetColumn(3);
+
             message.header.Update();
             message.pose.position = GetGeometryPoint(p.Unity2Ros());
             message.pose.orientation = GetGeometryQuaternion(v.rotation.Unity2Ros());
             Publish(message);
+            ToastUtil.Toast(this, "Reset Frame.");
+            Debug.Log("Reset FrameBoth");
+
         }
-		public void RsetFramePos()
+        public void ResetFramePos(Transform RefTransform=null)
 		{
 			GameObject go = new GameObject();
-			go.transform.parent = ReferenceTransform;
+            if (RefTransform is null)
+            {
+                go.transform.parent = ReferenceTransform;
+            }
+            else
+            {
+                go.transform.parent = RefTransform;
+            }
 			if (BasePlane.IsValid())
 			{
 				Vector3 normal = BasePlane.rotation * Vector3.down;
@@ -68,10 +108,17 @@ namespace RosSharp.RosBridgeClient
 			message.pose.orientation = GetGeometryQuaternion(v.rotation.Unity2Ros());
 			Publish(message);
 		}
-		public void RsetFrameRot()
+		public void ResetFrameRot(Transform RefTransform = null)
 		{
-			GameObject go = new GameObject();
-			go.transform.parent =ReferenceTransform;
+            GameObject go = new GameObject();
+            if (RefTransform is null)
+            {
+                go.transform.parent = ReferenceTransform;
+            }
+            else
+            {
+                go.transform.parent = RefTransform;
+            }
 			go.transform.position = TargetTransform.position;
 			if (BasePlane.IsValid())
 			{
@@ -91,7 +138,7 @@ namespace RosSharp.RosBridgeClient
 			}
 
 
-			Matrix4x4 v = TargetTransform.localToWorldMatrix * go.transform.worldToLocalMatrix;
+            Matrix4x4 v = TargetTransform.localToWorldMatrix * go.transform.worldToLocalMatrix;
 			Destroy(go);	
 			Vector3 p = v.GetColumn(3);
 			message.header.Update();

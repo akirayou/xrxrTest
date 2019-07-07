@@ -104,6 +104,7 @@ namespace RosSharp.RosBridgeClient
                 offset = tmp;
                 synced = true;
                 Debug.Log("NtpTime is started  offset is " + offset.ToString());
+                ToastUtil.Toast(this, "NtpTime is started  offset is " + offset.ToString());
             }
             else
             {

@@ -10,9 +10,17 @@
     {
         public int TargetImageIndex = 0;
         public GameObject MarkerObj=null;
+        /// <summary>
+        /// From the marker to the robot position offset.
+        /// </summary>
         public Vector3 MarkerOffset = new Vector3(0, 0.075f / 2, 0);
+        /// <summary>
+        /// In many case the robot marker is laied flat. You have to rotate the marker for robot real rotaton.
+        /// </summary>
+        public Vector3 MarkerRotate = new Vector3(0,-90,0);
         private Vector3 m_OriginalScale;
         private List<AugmentedImage> m_TempAugmentedImages = new List<AugmentedImage>();
+        public RosSharp.RosBridgeClient.ResetFrame ResetFrame;
         // Start is called before the first frame update
         void Start()
         {
@@ -20,10 +28,13 @@
             {
                 MarkerObj=GameObject.CreatePrimitive(PrimitiveType.Cube);
                 MarkerObj.transform.localScale = new Vector3(0.115f, 0.075f, 0.01f);
+                MarkerObj.transform.localRotation = Quaternion.Euler(MarkerRotate);
             }
             m_OriginalScale = MarkerObj.transform.localScale;
             MarkerObj.SetActive(false);
         }
+
+
 
         // Update is called once per frame
         void Update()
@@ -42,6 +53,9 @@
                     MarkerObj.transform.localPosition=Vector3.zero;
                     MarkerObj.transform.localRotation = Quaternion.identity;
                     MarkerObj.SetActive(true);
+                    ResetFrame.ResetFrameBoth(MarkerObj.transform);
+                    ToastUtil.Toast(this, "Set Robot pose by the marker.");
+
                 }
                 else if (image.TrackingState == TrackingState.Stopped && MarkerObj.activeSelf == true)
                 {

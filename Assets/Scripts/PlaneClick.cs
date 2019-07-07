@@ -6,6 +6,7 @@ public class PlaneClick : MonoBehaviour
 {
 	public GameObject FlagObj;
 	private TrackableHit _hit;
+    public Anchor PlaneAnchor=null;
 	public TrackableHit TrackableHit()
 	{
 		return _hit;
@@ -42,29 +43,25 @@ public class PlaneClick : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // If the player has not touched the screen, we are done with this update.
-        Touch touch;
-        if (Input.touchCount < 1 || (touch = Input.GetTouch(0)).phase != TouchPhase.Began)
-        {
-            return;
-        }
-
-        // Should not handle input if the player is pointing on UI.
-        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject(touch.fingerId))
-        {
-            return;
-        }
-		if (Input.GetMouseButtonUp(0))
+        if (Input.GetMouseButtonDown(0) || (Input.touchCount==1 && Input.GetTouch(0).phase==TouchPhase.Began))
 		{
+            if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
+            if (Input.touchCount == 1 && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)) return;
+
+
+            Debug.Log("Click");
 
 			Vector3 p=Input.mousePosition;
 			GoogleARCore.TrackableHit hit;
+            
 			if(GoogleARCore.Frame.Raycast(p.x, p.y, GoogleARCore.TrackableHitFlags.PlaneWithinPolygon, out hit))
 			{
 				FlagObj.SetActive(false);
 				_hit = hit;
 				Pose planePose = hit.Pose;
-				transform.position = planePose.position;
+                PlaneAnchor=hit.Trackable.CreateAnchor(hit.Pose);
+
+                transform.position = planePose.position;
 				transform.rotation = planePose.rotation;
 				FlagObj.SetActive(true);
 				SetFlagEvent.Invoke(this);
